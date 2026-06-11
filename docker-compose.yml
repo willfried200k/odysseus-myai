@@ -91,8 +91,14 @@ services:
       - /bin/sh
       - -c
       - |
+        echo "=== SearXNG Startup Wrapper ==="
+        echo "1. Checking if /tmp/settings.yml exists..."
+        ls -la /tmp/settings.yml
+        echo "2. Copying to /etc/searxng/settings.yml..."
         cp /tmp/settings.yml /etc/searxng/settings.yml
+        echo "3. Setting ownership..."
         chown searxng:searxng /etc/searxng/settings.yml
+        echo "4. Executing official entrypoint..."
         exec /usr/local/searxng/entrypoint.sh
     ports:
       - "127.0.0.1:8080:8080"
