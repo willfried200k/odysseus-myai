@@ -90,11 +90,12 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
-      # searxng-data holds runtime-generated files (uwsgi.ini, etc.).
-      # settings.yml is mounted separately at /tmp so the official entrypoint
-      # chown -R /etc/searxng does NOT touch it (avoids EROFS on :ro mounts).
-      # SEARXNG_SETTINGS_PATH tells the Python app to read from /tmp instead.
-      - searxng-data:/etc/searxng
+      # settings.yml is mounted at /tmp (outside /etc/searxng) so the official
+      # entrypoint chown -R /etc/searxng never touches it (avoids EROFS).
+      # SEARXNG_SETTINGS_PATH tells the Python app to read from here.
+      # We do NOT persist /etc/searxng with a named volume: a stale volume
+      # with an old settings.yml (missing default_doi_resolver) would shadow
+      # our custom settings and crash SearXNG on boot.
       - ./config/searxng/settings.yml:/tmp/searxng-settings.yml:ro
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
@@ -116,8 +117,8 @@ services:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/ || exit 1"]
       interval: 10s
       timeout: 10s
-      retries: 15
-      start_period: 30s
+      retries: 20
+      start_period: 60s
     restart: unless-stopped
 
   ntfy:
@@ -132,6 +133,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  searxng-data:
   chromadb-data:
   ntfy-cache:
