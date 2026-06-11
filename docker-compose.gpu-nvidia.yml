@@ -113,10 +113,11 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - searxng-data:/etc/searxng
-      - ./config/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - ./config/searxng/settings.yml:/etc/searxng-custom/settings.yml:ro
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
       - SEARXNG_SECRET=${SEARXNG_SECRET:-ultrasecretkey}
+      - SEARXNG_SETTINGS_PATH=/etc/searxng-custom/settings.yml
     # The official searxng image runs as the non-root `searxng` user, but its
     # entrypoint still needs to chown /etc/searxng on first boot, drop privs via
     # su-exec, and (with our wrapper above) write settings.yml into the named
