@@ -106,15 +106,21 @@ services:
     # `KeyError: 'default_doi_resolver'`, failing the healthcheck (issue #1414).
     # Bump this deliberately after verifying a newer tag boots clean.
     image: docker.io/searxng/searxng:2026.5.31-7159b8aed
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        cp /tmp/settings.yml /etc/searxng/settings.yml
+        chown searxng:searxng /etc/searxng/settings.yml
+        exec /usr/local/searxng/entrypoint.sh
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - searxng-data:/etc/searxng
-      - ./config/searxng/settings.yml:/etc/searxng-custom/settings.yml:ro
+      - ./config/searxng/settings.yml:/tmp/settings.yml:ro
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
       - SEARXNG_SECRET=${SEARXNG_SECRET:-ultrasecretkey}
-      - SEARXNG_SETTINGS_PATH=/etc/searxng-custom/settings.yml
     # The official searxng image runs as the non-root `searxng` user, but its
     # entrypoint still needs to chown /etc/searxng on first boot, drop privs via
     # su-exec, and (with our wrapper above) write settings.yml into the named
