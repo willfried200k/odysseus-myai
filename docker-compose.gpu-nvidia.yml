@@ -115,7 +115,9 @@ services:
       - ./config/searxng/settings.yml:/tmp/searxng-settings.yml:ro
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
-      - SEARXNG_SECRET=${SEARXNG_SECRET:-ultrasecretkey}
+      # SearXNG 2026.5.31+ refuses to start if secret_key == "ultrasecretkey".
+      # Override with a strong random value via SEARXNG_SECRET env var.
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-b29a4d6e8f1c3a5b7d9e2f4c6a8b0d2e4f6c8a0b2d4e6f8c0a2b4d6e8f0c2a4}
       - SEARXNG_SETTINGS_PATH=/tmp/searxng-settings.yml
     # The official searxng image runs as the non-root `searxng` user, but its
     # entrypoint still needs to chown /etc/searxng on first boot, drop privs via
