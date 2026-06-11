@@ -106,33 +106,19 @@ services:
     # `KeyError: 'default_doi_resolver'`, failing the healthcheck (issue #1414).
     # Bump this deliberately after verifying a newer tag boots clean.
     image: docker.io/searxng/searxng:2026.5.31-7159b8aed
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        echo "=== SearXNG Startup Wrapper ==="
-        echo "1. Checking if /tmp/settings.yml exists..."
-        ls -la /tmp/settings.yml
-        echo "2. Copying to /etc/searxng/settings.yml..."
-        cp /tmp/settings.yml /etc/searxng/settings.yml
-        echo "3. Setting ownership..."
-        chown searxng:searxng /etc/searxng/settings.yml
-        echo "4. Executing official entrypoint..."
-        exec /usr/local/searxng/entrypoint.sh
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - searxng-data:/etc/searxng
-      - ./config/searxng/settings.yml:/tmp/settings.yml:ro
+      - ./config/searxng/settings.yml:/tmp/searxng-settings.yml:ro
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
       - SEARXNG_SECRET=${SEARXNG_SECRET:-ultrasecretkey}
+      - SEARXNG_SETTINGS_PATH=/tmp/searxng-settings.yml
     # The official searxng image runs as the non-root `searxng` user, but its
     # entrypoint still needs to chown /etc/searxng on first boot, drop privs via
-    # su-exec, and (with our wrapper above) write settings.yml into the named
-    # volume. Without these capabilities the wrapper aborts at the redirection
-    # with EACCES and the container fails its healthcheck with permission
-    # errors during setup. Mirrors the cap set recommended by the upstream
+    # su-exec, and write runtime files. Without these capabilities the entrypoint
+    # aborts with EACCES. Mirrors the cap set recommended by the upstream
     # searxng-docker compose file. See issue #721.
     cap_drop:
       - ALL
@@ -142,11 +128,11 @@ services:
       - SETUID
       - DAC_OVERRIDE
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/', timeout=5).read(1)\""]
-      interval: 5s
-      timeout: 6s
-      retries: 20
-      start_period: 10s
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
     restart: unless-stopped
 
   ntfy:
